@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>NetJourney – Interactive Networking Simulator</title>
+<style>
+:root{--bg:#f6f7fb;--card:#fff;--tx:#1b2033;--mu:#5d6580;--bd:#dfe3ef;--ac:#3b5bdb;--ok:#2b8a3e;--bad:#c92a2a;
+--l1:#e8590c;--l2:#f08c00;--l3:#2f9e44;--l4:#1c7ed6;--l5:#7048e8;--l6:#ae3ec9;--l7:#d6336c;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#12151f;--card:#1b2030;--tx:#e8ebf5;--mu:#98a1bd;--bd:#2d3450;--ac:#7c93ff;color-scheme:dark}}
+*{box-sizing:border-box}html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+header{padding:22px 18px 8px;max-width:980px;margin:auto}h1{margin:0;font-size:26px}header p{margin:4px 0 0;color:var(--mu)}
+nav{display:flex;gap:6px;flex-wrap:wrap;max-width:980px;margin:12px auto;padding:0 18px}
+nav button,.btn{border:1px solid var(--bd);background:var(--card);color:var(--tx);padding:8px 14px;border-radius:8px;cursor:pointer;font:inherit}
+nav button.on,.btn.pri{background:var(--ac);color:#fff;border-color:var(--ac)}
+main{max-width:980px;margin:auto;padding:0 18px 40px}
+section{display:none}section.on{display:block}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:16px;margin:12px 0}
+h2{margin:6px 0 10px;font-size:20px}h3{margin:0 0 6px;font-size:16px}.mu{color:var(--mu)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}@media(max-width:720px){.grid{grid-template-columns:1fr}}
+.layer{display:flex;align-items:center;gap:10px;padding:10px 12px;margin:5px 0;border-radius:8px;color:#fff;cursor:pointer;font-weight:600;border:2px solid transparent}
+.layer.sel{border-color:var(--tx)}.layer small{margin-left:auto;font-weight:400;opacity:.9}
+.tag{display:inline-block;padding:2px 8px;border-radius:99px;background:var(--bg);border:1px solid var(--bd);margin:2px;font-size:13px}
+table{width:100%;border-collapse:collapse;font-size:14px}td,th{border:1px solid var(--bd);padding:6px 8px;text-align:left;vertical-align:top}th{background:var(--bg)}.tw{overflow-x:auto}details{border-bottom:1px solid var(--bd);padding:8px 0}summary{cursor:pointer;font-weight:600}
+.note{border-left:4px solid var(--ac);padding:8px 12px;background:var(--bg);border-radius:6px;margin:10px 0;font-size:14px}
+input[type=text]{padding:8px 10px;border:1px solid var(--bd);border-radius:8px;background:var(--card);color:var(--tx);font:inherit;min-width:220px}
+.stack{display:flex;justify-content:center;padding:14px 0;overflow-x:auto}
+.pdu{border:2px solid;border-radius:8px;padding:8px;display:flex;align-items:stretch;gap:6px;animation:pop .35s}
+.pdu .h{writing-mode:horizontal-tb;padding:6px 8px;border-radius:5px;color:#fff;font-size:12px;font-weight:600;white-space:nowrap;display:flex;flex-direction:column;justify-content:center}
+.pdu .h span{font-weight:400;font-size:11px;opacity:.95}
+.pdu .d{padding:6px 10px;background:var(--bg);border-radius:5px;font-family:ui-monospace,Menlo,monospace;display:flex;align-items:center}
+@keyframes pop{from{opacity:.2;transform:scale(.94)}to{opacity:1;transform:none}}
+.bits{font-family:ui-monospace,Menlo,monospace;word-break:break-all;font-size:12px;color:var(--ac)}
+.bar{height:6px;background:var(--bd);border-radius:9px;margin:8px 0}.bar i{display:block;height:100%;background:var(--ac);border-radius:9px;transition:width .3s}
+.opt{display:block;width:100%;text-align:left;margin:6px 0}.opt.ok{background:var(--ok);color:#fff}.opt.bad{background:var(--bad);color:#fff}
+svg text{fill:var(--tx);font-size:12px}
+
+:root{--bg:#f4f1ea;--card:#fbfaf6;--tx:#22262e;--mu:#666b76;--bd:#cdc7b9;--ac:#1f4e79;--l1:#8c5a2b;--l2:#8a6d00;--l3:#3f6b4f;--l4:#1f4e79;--l5:#5b4a7a;--l6:#7a4a5e;--l7:#8a3b3b}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#15171a;--card:#1c1f24;--tx:#e6e3da;--mu:#9b9b95;--bd:#34373d;--ac:#7fb0dd;--l1:#b8814f;--l2:#b8962a;--l3:#6fa383;--l4:#6f9ccc;--l5:#9a88bd;--l6:#b68399;--l7:#c27373}}
+body{font-size:15px}h1,h2,h3{font-family:Georgia,"Times New Roman",serif;font-weight:600}h1{font-size:28px;letter-spacing:-.2px}
+.card,.btn,.layer,nav button,input,.dv,.note,.tag,.pdu,.pdu .h,.pdu .d{border-radius:2px!important}
+nav{border-bottom:1px solid var(--bd);gap:0}nav button{border:0;border-bottom:2px solid transparent;background:none;border-radius:0!important;padding:8px 14px}
+nav button.on{background:none;color:var(--ac);border-bottom-color:var(--ac);font-weight:700}
+.btn.pri{background:var(--ac);border-color:var(--ac);color:#fff}[data-theme] .btn.pri{color:#fff}
+.layer{font-weight:500}.card{box-shadow:none}
+.path{display:flex;align-items:center;overflow-x:auto;padding:12px 0}
+.dv{border:1px solid var(--bd);padding:8px 12px;text-align:center;min-width:100px;background:var(--card);white-space:nowrap}
+.dv.on{border-color:var(--ac);background:var(--ac);color:#fff}.dv small{display:block;opacity:.8;font-size:12px}
+.lk{flex:1;min-width:50px;border-top:2px solid var(--mu);text-align:center;margin:0 4px}
+.lk small{position:relative;top:-10px;background:var(--bg);padding:0 4px;color:var(--mu);font-size:11px}
+.ly{padding:6px 10px;margin:3px 0;display:flex;justify-content:space-between;font-size:14px;border:1px solid var(--bd);color:var(--mu)}
+.ly.on{color:#fff;border-color:transparent}.sm{font-size:13px}
+.tw{overflow-x:auto}#fld td.chg{background:rgba(200,150,30,.3);font-weight:700}#fld td:first-child{color:var(--mu)}
+#stepTitle{font-family:Georgia,serif;font-size:18px;margin:6px 0}
+
+:root{--bg:#fff;--card:#fff;--tx:#1a1a1a;--mu:#555;--bd:#c8c8c8;--ac:#0b5cad;--l1:#7a4b1e;--l2:#86690a;--l3:#2e6b3f;--l4:#0b5cad;--l5:#5b4a7a;--l6:#7a3f5a;--l7:#8a2f2f}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#161616;--card:#161616;--tx:#eee;--mu:#aaa;--bd:#444;--ac:#6db3f2;--l1:#a8703b;--l2:#a58a1f;--l3:#4f9163;--l4:#4b8fd0;--l5:#8a78ad;--l6:#a8708a;--l7:#b86666}}
+body,h1,h2,h3,#stepTitle{font-family:Arial,Helvetica,sans-serif}h1,h2,h3{font-weight:700;letter-spacing:0}
+h1{font-size:24px}header{border-bottom:2px solid var(--ac);max-width:none;padding-bottom:10px}header>*{max-width:980px;margin-left:auto;margin-right:auto}
+nav{border:0;gap:6px}nav button{border:1px solid var(--bd);border-radius:3px!important;padding:7px 12px}
+nav button.on{background:var(--ac);color:#fff;border-color:var(--ac);font-weight:400}
+.note{border:0;background:none;padding:0;font-style:italic;color:var(--mu)}
+.tag{background:none}.card{border-radius:3px!important}#stepTitle{font-size:17px;font-weight:700}
+#analogy{border-top:1px dashed var(--bd);padding-top:8px}
+.qv{display:flex;gap:4px;flex-wrap:wrap;margin:10px 0}.qs{width:26px;height:26px;border:1px solid var(--bd)}.qs.f{background:var(--ac);border-color:var(--ac)}
+.lab label{display:block;margin:8px 0}.lab input[type=range]{width:min(320px,60%);vertical-align:middle}
+.nz text{font-size:12px}.nz .n{cursor:pointer}#nstep{font-weight:700;min-height:1.6em}
+.ph{display:flex;gap:6px;margin:6px 0}.ph span{flex:1;text-align:center;padding:6px;border-bottom:3px solid var(--bd);color:var(--mu);font-size:14px}.ph span.on{border-color:var(--ac);color:var(--tx);font-weight:700}
+body:not(.det) .pdu .h span{display:none}
+:root{--w:1360px}
+header{max-width:none;margin:0;text-align:center;padding:22px 28px 14px}header>*{max-width:var(--w);margin-left:auto;margin-right:auto}header p{margin-top:4px}
+nav{max-width:var(--w);justify-content:center;padding:0 28px}
+main{max-width:var(--w);padding:0 28px 48px}
+section.on{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,540px),1fr));gap:16px;align-items:start}
+section .card{margin:0}
+</style></head><body>
+<header><h1>NetJourney</h1><p>An interactive OSI &amp; TCP/IP network learning simulator · Intro to Computer Networking, Unit 1</p></header>
+<nav id="nav"></nav>
+<main>
+<section id="about"></section>
+<section id="basics"></section>
+
+<section id="net"><div class="card"><h2>Internet Map: edge, access and core</h2>
+<p class="mu">Follow a request from your device to a web server. Tap any node to learn what it is.</p>
+<div class="tw"><svg id="nsvg" class="nz" viewBox="0 0 760 300" width="100%" style="min-width:640px"></svg></div>
+<label><input type="checkbox" id="ixp"> Use the IXP shortcut (peering)</label>
+<p id="nstep"></p><div id="ninfo"></div><p id="npath" class="mu sm"></p>
+<p><button class="btn pri" id="ngo">Send a request</button> <button class="btn" id="nrs">Reset</button></p>
+<p class="note">With the shortcut, the packet crosses fewer links and routers, so there is less delay. That is why content providers connect directly to ISPs and IXPs.</p></div></section>
+<section id="std"><div class="card"><h2>Internet History and Standards</h2>
+<p class="mu">Standards let equipment from different makers work together. Here are some milestones.</p><div id="tl"></div></div>
+<div class="card"><h3>Who defines it?</h3><p class="mu">Pick a technology to see which organisation is behind it.</p><div id="stb"></div><p id="sta" style="min-height:3em"></p></div></section>
+<section id="osi">
+ <div class="card"><h2>OSI &amp; TCP/IP Explorer</h2><p class="mu">Tap a layer to learn what it does. The right side shows how the Internet stack groups these functions.</p>
+ <div class="grid"><div id="stack"></div><div id="detail"></div></div>
+ <label><input type="checkbox" id="simple" checked> Explain simply</label></div>
+ <div class="card"><h3>OSI vs Internet protocol stack</h3><div id="cmp"></div>
+ <div class="note">OSI is a <b>reference model</b>; the Internet stack groups practical Internet functions differently (Application covers OSI layers 5–7). Protocol placement can vary by protocol and model.</div></div>
+</section>
+
+<section id="journey">
+ <div class="card"><h2>Packet Journey</h2>
+ <p class="mu">Follow a message from Host A to a web server. Press <b>Next</b> to move one step at a time.</p>
+ <div id="phase" class="ph"></div>
+ <div class="bar"><i id="prog"></i></div>
+ <div id="path" class="path"></div>
+ <p><button class="btn" id="prev">Back</button> <button class="btn pri" id="next">Next</button> <button class="btn" id="play">Auto-play</button> <button class="btn" id="reset">Restart</button> <span id="cnt" class="mu sm"></span></p>
+ <div id="stepTitle"></div>
+ <div class="stack"><div id="pdu"></div></div>
+ <p id="cap" class="mu sm" style="text-align:center"></p>
+ <p id="stepText"></p><p id="analogy" class="mu"></p>
+ <div class="grid" id="jg"><div id="layc"><div class="mu sm">Layers this device processes</div><div id="lay"></div></div></div>
+ <div id="insp"><div class="mu sm">Header inspector (highlight = new or changed at this step)</div><div class="tw"><table id="fld"></table></div></div>
+ <details><summary>Options</summary><p><input type="text" id="msg" value="Hello, World!" maxlength="24"> <label><input type="checkbox" id="det"> Show technical details</label></p></details>
+ <p class="note">Simplified, labelled example: real headers have more fields and checksums are not calculated here.</p></div>
+</section>
+
+<section id="lab"><div class="card lab"><h2>Packet Switching Lab</h2>
+<p class="mu">Many senders share one router link. Packets that cannot be sent right away wait in a buffer (queue). When the buffer is full, new packets are dropped. Change the settings and watch what happens.</p>
+<label>Packets arriving: <b id="lamv"></b> per second <input type="range" id="lam" min="1" max="20" value="6"></label>
+<label>Link speed: <b id="muv"></b> packets per second <input type="range" id="mu" min="1" max="20" value="8"></label>
+<label>Buffer size: <b id="bufv"></b> packets <input type="range" id="buf" min="1" max="15" value="8"></label>
+<p class="mu sm">Router buffer (filled boxes are packets waiting):</p><div class="qv" id="qv"></div>
+<div class="tw"><table id="lst"></table></div>
+<p id="lmsg" style="font-weight:700"></p>
+<p><button class="btn pri" id="lgo">Start</button> <button class="btn" id="lrs">Reset</button></p>
+<p class="note">Try: arrivals lower than link speed (little waiting), equal (queue builds, delay rises), higher (buffer fills, packets are lost). This is the packet-switching idea behind delay and loss in Unit 1.</p></div></section>
+<section id="topo">
+ <div class="card"><h2>Topology Playground</h2>
+ <p class="mu">Pick a topology, then <b>tap a device to fail it</b>. Red devices are cut off from the first host (H1).</p>
+ <p><span id="tbtns"></span> Hosts: <input type="range" id="cnt" min="3" max="8" value="5"> <b id="cntv">5</b></p>
+ <svg id="svg" viewBox="0 0 560 340" width="100%" style="max-width:640px;display:block;margin:auto"></svg>
+ <div id="tinfo" class="note"></div>
+ <p class="mu" style="font-size:13px">Legend: PC host · SW switch · SRV server</p></div>
+</section>
+
+<section id="quiz"><div class="card"><h2>Knowledge Check</h2><div id="q"></div></div></section>
+</main>
+<script>
+const $=s=>document.querySelector(s);
+const tabs=[["about","Project"],["basics","Fundamentals"],["net","Internet Map"],["std","Standards"],["osi","OSI Explorer"],["journey","Packet Journey"],["lab","Switching Lab"],["topo","Topology"],["quiz","Quiz"]];
+function show(id){if(typeof labStop=="function")labStop();if(typeof nStop=="function")nStop();document.querySelectorAll("section").forEach(s=>s.classList.toggle("on",s.id==id));
+ [...$("#nav").children].forEach((b,i)=>b.classList.toggle("on",tabs[i][0]==id));if(location.hash!="#"+id)history.replaceState(null,"","#"+id)}
+tabs.forEach(t=>{const b=document.createElement("button");b.textContent=t[1];b.onclick=()=>show(t[0]);$("#nav").appendChild(b)});
+
+/* ---------- About ---------- */
+const U1=[["Basic concepts of computer networks","Fundamentals tab; device roles in Topology and Quiz"],["Internet: network edge and core","Internet Map: interactive edge, access and core, with an IXP shortcut"],["Delay, loss, throughput","Fundamentals tab + delay calculator; Switching Lab shows queuing delay, loss and throughput"],["Network topology","Topology Playground: star, bus, ring, mesh with failure testing"],["Types of networks","Fundamentals tab (PAN, LAN, MAN, WAN)"],["Internet standards and organisations","Standards tab: history timeline and a \"who defines it?\" activity"],["OSI layer stack","OSI Explorer (7 layers, simple/detailed view)"],["Protocols in the Internet stack","OSI vs TCP/IP comparison; Packet Journey"],["AI-powered network monitoring (intro)","Concept note in Fundamentals (explanatory only)"]];
+const DIF=[["Robot, drone and vehicle networks (1–7, 9, 18)","Design a network for one specific machine or fleet, usually needing hardware or a testbed.","Hardware-free, general-purpose teaching tool for the core concepts."],["IoT / sensor / satellite / disaster systems (8, 13–17)","Domain-specific sensor networks and alerting.","Not tied to any application domain; explains the fundamentals those systems rely on."],["Security, SDN and ML projects (10–12, 19, 20)","Traffic analysis, attacks, SDN controllers, ML models.","None of these: no packet capture, SDN, attack detection or ML (explicitly out of scope)."]];
+const tb=(h,r)=>`<div class="tw"><table><tr>${h.map(x=>`<th>${x}</th>`).join("")}</tr>${r.map(x=>`<tr>${x.map(c=>`<td>${c}</td>`).join("")}</tr>`).join("")}</table></div>`;
+$("#about").innerHTML=`<div class="card"><h2>NetJourney: Interactive OSI &amp; TCP/IP Network Learning Simulator</h2>
+<p class="mu">Intro to Computer Networking · Unit 1 – Network Fundamentals · Web application</p>
+<p><b>Student:</b> Shreyes Barthwal &nbsp;·&nbsp; <b>Roll no.:</b> HD.SC.U4AID25014<br><b>Subject:</b> Introduction to Computer Networking &nbsp;·&nbsp; <b>Professor:</b> Dr. Shikha Dwivedi</p>
+<h3>Problem statement</h3><p>Computer networking brings together several connected but abstract ideas: layers, protocols, addressing, encapsulation, network devices, topologies and the structure of the Internet. Students usually meet them through lecture slides, textbook figures and definitions. These are good for reference, but they rarely show what actually happens when data travels from one device to another.</p>
+<p><b>Specific difficulties students face</b></p><ul>
+<li>The OSI model becomes seven names to memorise instead of a way of dividing communication tasks.</li>
+<li>The OSI model and the Internet protocol stack are taught separately, so the link between them is unclear.</li>
+<li>Encapsulation involves headers, addresses and data units changing step by step, which a static diagram cannot show.</li>
+<li>Devices such as switches and routers are defined in words, so students do not see which layers each one actually uses.</li>
+<li>Delay, loss and throughput are given as formulas, with no way to see queues building or packets being dropped.</li>
+<li>Students need explained practice, not just a score telling them an answer was wrong.</li></ul>
+<p><b>The gap</b></p><p>Full tools such as Cisco Packet Tracer and Wireshark are made for configuring or capturing real networks and assume some prior knowledge. There is little that is light, browser-based and explains the fundamentals step by step for a first-time learner.</p>
+<p><b>Problem statement:</b> Students of introductory networking need an accessible, visual and practice-oriented way to see how layers, protocols, encapsulation, devices, the Internet's structure and packet switching fit together, so that individual definitions connect into one picture of communication.</p>
+<h3>Objectives</h3><ol><li>Explain the OSI model and its relation to the Internet protocol stack.</li><li>Visualise encapsulation and decapsulation step by step.</li><li>Compare common topologies and see the effect of device failure.</li><li>Understand how the Internet is structured, who sets its standards, and how queues cause delay and loss.</li><li>Check understanding with feedback-driven quizzes.</li></ol></div>
+<div class="card"><h3>Unit 1 coverage</h3>${tb(["Syllabus topic","Where in NetJourney"],U1)}</div>
+<div class="card"><h3>How this project differs from the other projects on the list</h3>${tb(["Group","What they do","NetJourney"],DIF)}<div class="note">NetJourney is an educational simulator. It does not capture live packets, optimise routing, allocate bandwidth, detect intrusions or control hardware.</div></div>
+<div class="card"><h3>Design &amp; scope</h3><p><b>Distinguishing feature:</b> a simple/technical hop-by-hop trace with a postal-letter analogy, plus an Internet Map (edge, access and core) and a Switching Lab that shows queuing delay and packet loss on a shared link, (host, switch, router, server) showing which layers each device processes and highlighting every header field a device changes, such as the MAC rewrite and TTL decrement.</p>
+<p><b>Modules:</b> Fundamentals · Internet Map · Standards · OSI Explorer · Packet Journey · Switching Lab · Topology Playground · Quiz. <b>Built with:</b> HTML, CSS and JavaScript (no external libraries), responsive with light/dark themes.</p>
+<p><b>Limitations:</b> headers are simplified and labelled; checksums and real transmission are not simulated; the topology tool uses guided examples rather than a full emulator.</p>
+<p><b>Future work:</b> drag-and-drop topology builder, subnetting/addressing activities, saved quiz progress.</p></div>
+<p style="text-align:center"><button class="btn pri" onclick="show('osi')">Start learning →</button></p>`;
+
+/* ---------- Fundamentals ---------- */
+const basics=[
+["Network edge &amp; core","The <b>edge</b> is where end systems (hosts, servers) and access networks (Wi‑Fi, Ethernet, cellular) live. The <b>core</b> is the mesh of interconnected routers and links that carries data between them."],
+["Packet switching","Messages are split into packets that share links. Routers use <b>store-and-forward</b>: a whole packet must arrive before it is forwarded. Compared with circuit switching, links are shared efficiently but queues can form."],
+["Delay","Per router: <b>processing + queuing + transmission (L/R) + propagation (d/s)</b>. Queuing delay varies with traffic load."],
+["Loss","If a router’s buffer is full, arriving packets are dropped. Lost packets may be retransmitted by higher layers (e.g. TCP)."],
+["Throughput","The rate at which data actually arrives. End-to-end throughput is limited by the <b>bottleneck link</b> – the slowest link on the path."],
+["Types of networks","<b>PAN</b> (personal devices), <b>LAN</b> (building/campus), <b>MAN</b> (city), <b>WAN</b> (countries; the Internet is a network of networks)."],
+["Internet standards &amp; organisations","<b>IETF</b> publishes RFCs for Internet protocols (TCP, IP, HTTP). <b>IEEE</b> defines link/physical standards (802.3 Ethernet, 802.11 Wi‑Fi). Others: ISO, ITU, W3C, ICANN."],
+["AI-powered network monitoring (concept)","An AI-assisted system can observe which devices are connected and how much bandwidth each needs, spot unusual patterns, and suggest adjustments. <i>Educational scenario only – NetJourney does not monitor or change a real network.</i>"]];
+$("#basics").innerHTML='<div class="card"><h2>Networking Fundamentals</h2>'+basics.map(b=>`<details><summary>${b[0]}</summary><p>${b[1]}</p></details>`).join("")+`</div>
+<div class="card"><h3>Try it: delay calculator</h3><p class="mu">Transmission delay = L / R</p>
+Packet size <input type="number" id="L" value="1500" style="width:80px"> bytes · Link rate <input type="number" id="R" value="100" style="width:70px"> Mbps · Distance <input type="number" id="D" value="1000" style="width:70px"> km
+<p id="dres" class="bits"></p></div>`;
+function calc(){const L=+$("#L").value*8,R=+$("#R").value*1e6,D=+$("#D").value*1000;
+ const tx=L/R*1000,pr=D/2e8*1000;$("#dres").innerHTML=`Transmission: ${tx.toFixed(4)} ms · Propagation (2×10⁸ m/s): ${pr.toFixed(3)} ms · Total ≈ ${(tx+pr).toFixed(3)} ms (ignoring queuing/processing)`}
+["L","R","D"].forEach(i=>$("#"+i).oninput=calc);calc();
+
+/* ---------- OSI ---------- */
+const C=["--l7","--l6","--l5","--l4","--l3","--l2","--l1"];
+const osi=[
+[7,"Application","User-facing network services and protocols.","HTTP, HTTPS, DNS, SMTP, FTP","Data / message","The apps you use talk to the network here – like a browser asking for a web page."],
+[6,"Presentation","Data format, encryption, compression.","TLS (often placed here), JPEG, ASCII","Data","Translates data so both sides understand it – like agreeing on a language."],
+[5,"Session","Starts, manages and ends dialogues.","NetBIOS, RPC, session control","Data","Keeps a conversation organised from hello to goodbye."],
+[4,"Transport","Process-to-process delivery using ports; reliability (TCP) or speed (UDP).","TCP, UDP","Segment (TCP) / Datagram (UDP)","Makes sure the right app gets the data – TCP is a careful courier, UDP a quick one."],
+[3,"Network","Logical addressing and routing across networks.","IP, ICMP, OSPF","Packet","Chooses the route – like street addresses and maps for data."],
+[2,"Data Link","Node-to-node delivery on one link; MAC addressing; framing.","Ethernet, Wi‑Fi (802.11), ARP*","Frame","Delivers data to the next device on the same local link."],
+[1,"Physical","Transmits raw bits over the medium.","Cables, fibre, radio, hubs","Bits","The actual signals: electricity, light or radio waves."]];
+const tcp=[["Application",[0,1,2]],["Transport",[3]],["Network",[4]],["Link",[5]],["Physical",[6]]];
+const OX=[
+[["Gives applications access to network services","Defines how requests and replies are formatted (for example, asking a server for a web page)","Supports services such as name lookup (DNS), email and file transfer"],"End systems: your device and the server","Your browser sends an HTTP request for a web page."],
+[["Translates data between the application's format and a network format","Encrypts and decrypts data (for example TLS)","Compresses data and handles character encoding such as ASCII or UTF-8"],"End systems","The request is encrypted before it leaves your device and decoded by the server."],
+[["Opens, manages and closes a dialogue between two applications","Can add checkpoints so a long transfer can resume after a break","Keeps track of whose turn it is to send"],"End systems","A video call stays one session while many packets flow back and forth."],
+[["Uses port numbers to find the right application","Splits large data into segments and puts them back in order","TCP adds a handshake, acknowledgements and retransmission; UDP is faster but gives no guarantees"],"End systems only (routers do not look at this layer)","Your request goes to port 443 on the server; TCP resends anything that gets lost."],
+[["Gives devices logical (IP) addresses","Routing: chooses the path to the destination network","Uses TTL to stop packets looping forever"],"Routers and end systems","A router reads the destination IP address and picks the next hop."],
+[["Wraps packets into frames for one link","Uses physical (MAC) addresses inside the local network","Detects errors using a trailer (FCS)"],"Network cards, switches and Wi-Fi access points","A switch reads the MAC address and sends the frame out of the right port."],
+[["Turns bits into signals: electricity, light or radio waves","Defines cables, connectors, voltages, frequencies and data rates","Moves raw bits without understanding what they mean"],"Cables, hubs, repeaters and the hardware in a network card","Bits travel as light pulses in fibre or radio waves in Wi-Fi."]];
+let selL=3;
+function drawOSI(){
+ $("#stack").innerHTML=osi.map((l,i)=>`<div class="layer ${i==selL?"sel":""}" style="background:var(${C[i]})" onclick="selL=${i};drawOSI()">${l[0]}. ${l[1]}<small>${l[4]}</small></div>`).join("");
+ const l=osi[selL],X=OX[selL];
+ $("#detail").innerHTML=`<h3>Layer ${l[0]} – ${l[1]}</h3><p>${$("#simple").checked?l[5]:l[2]}</p><p><b>Examples:</b> ${l[3].split(", ").map(x=>`<span class="tag">${x}</span>`).join("")}</p><p><b>Data unit:</b> ${l[4]}</p><p><b>What it does</b></p><ul>${X[0].map(f=>`<li>${f}</li>`).join("")}</ul><p><b>Where it works:</b> ${X[1]}</p><p><b>Example:</b> ${X[2]}</p><p class="mu" style="font-size:13px">*ARP is often described between layers 2 and 3.</p>`;
+ $("#cmp").innerHTML=`<div class="grid"><div><b>OSI (7)</b>${osi.map((x,i)=>`<div class="layer" style="background:var(${C[i]});padding:5px 10px">${x[0]}. ${x[1]}</div>`).join("")}</div>
+ <div><b>Internet stack (5)</b>${tcp.map(t=>`<div class="layer" style="background:var(${C[t[1][0]]});min-height:${t[1].length*38}px;align-items:center">${t[0]}</div>`).join("")}</div></div>`}
+$("#simple").onchange=drawOSI;drawOSI();
+
+/* ---------- Packet journey ---------- */
+let st=0,timer=null;
+const DEV=[["Host A","192.168.1.10"],["Switch","Layer 2 device"],["Router","default gateway"],["Web Server","203.0.113.5"]],LK=["Ethernet","Ethernet","WAN link"];
+const LN=["Application","Transport","Network","Data Link","Physical"],LC=["--l7","--l4","--l3","--l2","--l1"];
+const TP=[49152,80],I64=["192.168.1.10","203.0.113.5",64],I63=["192.168.1.10","203.0.113.5",63];
+const EA=["AA:AA:01","BB:BB:01"],ER=["BB:BB:02","CC:CC:09"];
+/* device, layers used, TCP, IP, Ethernet, bits?, title, explanation */
+const S=[
+[0,[0],0,0,0,0,"Application creates the data","The browser builds an HTTP request holding your message. This is the <b>payload</b>; no network information is attached yet."],
+[0,[1],TP,0,0,0,"Transport adds a TCP header","Adds <b>source and destination ports</b> (49152 → 80) so the server can hand the data to the web-server process, plus sequence numbers for ordered, reliable delivery. Unit: <b>segment</b>."],
+[0,[2],TP,I64,0,0,"Network adds an IP header","Adds <b>source and destination IP addresses</b> and TTL 64. The destination is outside 192.168.1.0/24, so the host picks its <b>default gateway</b> as the next hop. Unit: <b>packet</b>."],
+[0,[3],TP,I64,EA,0,"Data Link adds a frame header and trailer","ARP finds the <b>gateway's</b> MAC address. The frame is addressed to the router, not the server, because MAC addresses only work on a single link. A trailer (FCS) allows error detection. Unit: <b>frame</b>."],
+[0,[4],TP,I64,EA,1,"Physical layer sends bits","The frame is converted to bits and signalled onto the cable or radio link."],
+[1,[3,4],TP,I64,EA,0,"Switch forwards at Layer 2","The switch reads only the Ethernet header. Its MAC table shows BB:BB:01 sits on the router's port, so the frame is forwarded <b>unchanged</b>. It never opens the IP packet."],
+[2,[3,4],TP,I64,0,0,"Router receives the frame","The destination MAC matches the router and the FCS is valid, so the frame header and trailer are <b>removed</b>. The IP packet moves up to Layer 3."],
+[2,[2],TP,I63,0,0,"Router routes the IP packet","Looks up the destination IP in the <b>routing table</b>, selects the outgoing interface, decrements <b>TTL 64 → 63</b> and updates the header checksum. The IP addresses are untouched."],
+[2,[3,4],TP,I63,ER,0,"Router builds a new frame","A <b>new</b> frame is created for the next link: source MAC is the router's WAN interface, destination is the server. MAC addresses changed hop by hop; IP addresses did not."],
+[3,[3,4],TP,I63,0,0,"Server receives the frame","The FCS checks out and the destination MAC matches, so the frame header and trailer are removed."],
+[3,[2],TP,0,0,0,"Server processes the IP header","Destination IP matches this host and the protocol field says TCP, so the segment goes to the transport layer and the IP header is removed."],
+[3,[1],0,0,0,0,"Transport demultiplexes by port","Port 80 selects the web-server process. TCP reassembles the data in order and removes its header."],
+[3,[0],0,0,0,0,"Application receives the data","The web server reads your original message. Delivered. The reply travels back along the same path in reverse."]];
+const SH=["Your message is ready to send. Nothing has been added to it yet.","TCP adds a header with port numbers, so the data reaches the right program on the server.","IP adds the sender's and receiver's addresses, so the packet can cross many networks.","A frame label is added for the next local stop, the router. This is the last wrapping.","The frame is turned into bits and sent along the cable or Wi-Fi.","The switch only reads the frame label and passes it on. It does not open the packet.","The router takes off the old frame label.","The router reads the IP address, chooses the next route and lowers the TTL by 1.","The router adds a new frame label for the next stretch. The IP addresses stay the same.","The server takes off the frame label.","The server checks the IP address is its own and takes off the IP header.","The server uses the port number to pass the data to the web server program.","The web server program receives your original message. Done!"];
+const AN=["You write the letter (the message).","You put it in an envelope marked for the right person in the house, like a port number.","You write the full postal address on a parcel: street, city, country (the IP address).","A local courier writes the next stop on a label, the nearest sorting office (the MAC address).","The courier van drives the parcel away (bits on the wire).","A local depot passes the parcel along without opening it.","The sorting office takes off the local courier label.","The office reads the full address, picks the next route and marks one stop used (TTL).","A new courier label is stuck on for the next stretch. The address stays the same.","The destination depot removes the courier label.","Reception reads the address and removes the outer wrapping.","The envelope is handed to the right person (port 80).","The letter is opened and read."];
+const fv=s=>[["Src port",s[2]&&s[2][0]],["Dst port",s[2]&&s[2][1]],["Src IP",s[3]&&s[3][0]],["Dst IP",s[3]&&s[3][1]],["TTL",s[3]&&s[3][2]],["Src MAC",s[4]&&s[4][0]],["Dst MAC",s[4]&&s[4][1]]];
+const wr=(c,l,x,f)=>`<div class="pdu" style="border-color:var(${c})"><div class="h" style="background:var(${c})">${l}</div>${x}${f?`<div class="h" style="background:var(${c})">FCS</div>`:""}</div>`;
+function bits(m){return [...m].slice(0,4).map(c=>c.charCodeAt(0).toString(2).padStart(8,"0")).join(" ")+" …"}
+function drawJ(){
+ const s=S[st],pv=S[st-1],m=$("#msg").value||"(empty)";
+ $("#prog").style.width=st/(S.length-1)*100+"%";
+ $("#path").innerHTML=DEV.map((d,k)=>`<div class="dv ${k==s[0]?"on":""}"><b>${d[0]}</b><small>${d[1]}</small></div>`+(k<3?`<div class="lk"><small>${LK[k]}</small></div>`:"")).join("");
+ $("#stepTitle").textContent=s[6];
+ $("#lay").innerHTML=LN.map((n,k)=>{const on=s[1].includes(k);return `<div class="ly ${on?"on":""}" style="${on?`background:var(${LC[k]})`:""}"><span>${5-k}. ${n}</span><span>${on?"working here":""}</span></div>`}).join("");
+ let h=s[5]?`<div class="bits">${bits(m)}<br>(frame sent as bits)</div>`:`<div class="d">${m}</div>`;
+ if(!s[5]){if(s[2])h=wr("--l4",`TCP<span>${s[2][0]} → ${s[2][1]}</span>`,h);
+  if(s[3])h=wr("--l3",`IP<span>TTL ${s[3][2]}</span>`,h);
+  if(s[4])h=wr("--l2",`Frame<span>${s[4][0]} → ${s[4][1]}</span>`,h,1)}
+ $("#pdu").innerHTML=h;const d=$("#det").checked;document.body.classList.toggle("det",d);$("#stepText").innerHTML=d?s[7]:SH[st];$("#analogy").innerHTML="<b>Like posting a letter:</b> "+AN[st];["layc","insp"].forEach(i=>$("#"+i).style.display=d?"":"none");$("#jg").style.gridTemplateColumns=d?"":"1fr";
+ const a=fv(s),b=pv?fv(pv):a;
+ $("#fld").innerHTML="<tr>"+a.map(x=>`<th>${x[0]}</th>`).join("")+"</tr><tr>"+a.map((x,i)=>`<td class="${pv&&x[1]&&x[1]!==b[i][1]?"chg":""}">${x[1]||"—"}</td>`).join("")+"</tr>";
+ const ph=s[0]==0?0:s[0]==3?2:1;$("#phase").innerHTML=["Sending","Travelling","Receiving"].map((n,i)=>`<span class="${i==ph?"on":""}">${i+1}. ${n}</span>`).join("");$("#cnt").textContent=`Step ${st+1} of ${S.length}`;$("#cap").textContent=s[5]?"Now travelling as bits.":"Outer wrapping now: "+(s[4]?"frame (local delivery)":s[3]?"IP packet (addresses)":s[2]?"TCP segment (port numbers)":"your data only");$("#prev").disabled=st==0;$("#next").disabled=st==S.length-1}
+function stop(){clearInterval(timer);timer=null;$("#play").textContent="Auto-play"}
+$("#next").onclick=()=>{stop();if(st<S.length-1)st++;drawJ()};$("#prev").onclick=()=>{stop();if(st>0)st--;drawJ()};
+$("#reset").onclick=()=>{stop();st=0;drawJ()};
+$("#play").onclick=()=>{if(timer)return stop();if(st>=S.length-1)st=0;$("#play").textContent="Pause";drawJ();
+ timer=setInterval(()=>{if(st<S.length-1){st++;drawJ()}else stop()},2200)};
+$("#msg").oninput=$("#det").onchange=drawJ;drawJ();
+
+/* ---------- Standards ---------- */
+const TL=[[1969,"ARPANET sends its first message","An early packet-switched network and an ancestor of the Internet."],[1983,"ARPANET switches to TCP/IP","TCP/IP becomes the common language. This is often treated as the Internet's birth."],[1984,"ISO publishes the OSI reference model","A seven-layer model describing how network functions are divided."],[1986,"The IETF is formed","Open working groups that write the RFCs for Internet protocols."],[1991,"The first website goes online","Tim Berners-Lee at CERN builds the World Wide Web on top of the Internet."],[1997,"IEEE 802.11 (Wi-Fi) is first published","The wireless LAN standard; later versions made it faster."],[1998,"ICANN is created","Coordinates domain names and IP address allocation worldwide."]];
+const WHO=[["TCP, IP and HTTP","IETF","The IETF publishes Internet protocols as RFCs (Requests for Comments)."],["Ethernet (802.3)","IEEE","The IEEE 802 committees define link and physical layer standards."],["Wi-Fi (802.11)","IEEE","Also an IEEE 802 standard; the Wi-Fi Alliance certifies products."],["The OSI model","ISO","ISO published the OSI reference model (ISO/IEC 7498)."],["CSS (web page styling)","W3C","The W3C develops open web standards."],["Domain names and IP allocation","ICANN / IANA","ICANN coordinates the global naming and numbering system; IANA maintains the registries."]];
+$("#tl").innerHTML=TL.map(t=>`<div style="display:flex;gap:14px;padding:8px 0;border-bottom:1px solid var(--bd)"><b style="min-width:46px">${t[0]}</b><div><b>${t[1]}</b><div class="mu sm">${t[2]}</div></div></div>`).join("");
+$("#stb").innerHTML=WHO.map((w,i)=>`<button class="btn" style="margin:3px" onclick="$('#sta').innerHTML='<b>${w[1]}</b>: ${w[2]}'">${w[0]}</button>`).join("");
+
+/* ---------- Internet map ---------- */
+const NN=[["Your device",60,150,"Network edge","An end system (host) such as a laptop, phone or IoT device. Hosts run applications and sit at the edge of the network.","Your device creates the request."],
+["Access ISP",190,150,"Access network","Connects homes and campuses to the Internet using fibre, cable, DSL, Wi-Fi or cellular links.","The access network carries it to your ISP's first router."],
+["Regional ISP",330,80,"Network core","Joins many access ISPs and passes their traffic towards larger backbone networks.","The regional ISP forwards it towards the core."],
+["IXP",330,220,"Network core","Internet Exchange Point: a meeting place where networks connect directly (peering), which shortens paths and lowers delay.","The IXP passes it straight to the content network."],
+["Tier-1 backbone",470,150,"Network core","Very high-speed global backbone. Each router stores a whole packet, then forwards it (store-and-forward).","The backbone routers forward the packet at high speed."],
+["Content network",600,150,"Access network","A content provider's own data-centre network, often linked directly to large ISPs.","It enters the content provider's network."],
+["Web server",710,150,"Network edge","The end system that receives the request and sends a reply.","The web server receives your request."]];
+const NE=[[0,1],[1,2],[1,3],[2,4],[3,4],[3,5],[4,5],[5,6]],P1=[0,1,2,4,5,6],P2=[0,1,3,5,6];
+const NZ=[[0,125,"Network edge","--l4"],[125,255,"Access network","--l3"],[255,540,"Network core","--l7"],[540,660,"Access network","--l3"],[660,760,"Network edge","--l4"]];
+let ns=-1,nsel=0,nt=null;
+function drawNet(){
+ const path=$("#ixp").checked?P2:P1,done=ns<0?[]:path.slice(0,ns+1);
+ const on=(a,b)=>done.some((x,i)=>i&&((done[i-1]==a&&x==b)||(done[i-1]==b&&x==a)));
+ let h=NZ.map(z=>`<rect x="${z[0]}" y="8" width="${z[1]-z[0]}" height="284" style="fill:var(${z[3]});opacity:.09"/><text x="${(z[0]+z[1])/2}" y="28" text-anchor="middle" style="fill:var(--mu)">${z[2]}</text>`).join("");
+ h+=NE.map(e=>{const A=NN[e[0]],B=NN[e[1]],o=on(e[0],e[1]);return `<line x1="${A[1]}" y1="${A[2]}" x2="${B[1]}" y2="${B[2]}" style="stroke:${o?"var(--ac)":"var(--bd)"}" stroke-width="${o?4:2}"/>`}).join("");
+ h+=NN.map((n,i)=>{const a=done.includes(i);return `<g class="n" onclick="nsel=${i};drawNet()"><circle cx="${n[1]}" cy="${n[2]}" r="20" style="fill:${a?"var(--ac)":"var(--card)"};stroke:${i==nsel?"var(--tx)":"var(--ac)"}" stroke-width="${i==nsel?3:2}"/><text x="${n[1]}" y="${n[2]+38}" text-anchor="middle">${n[0]}</text></g>`}).join("");
+ $("#nsvg").innerHTML=h;
+ const n=NN[nsel];$("#ninfo").innerHTML=`<b>${n[0]}</b> (${n[3]}): ${n[4]}`;
+ $("#nstep").textContent=ns<0?"":`Step ${ns+1} of ${path.length}: ${NN[path[ns]][5]}`;
+ $("#npath").textContent=`Path: ${path.length-1} links, ${path.length-2} intermediate networks/routers ${$("#ixp").checked?"(shortcut)":"(through the backbone)"}`}
+function nStop(){clearInterval(nt);nt=null;$("#ngo").textContent="Send a request"}
+$("#ngo").onclick=()=>{if(nt)return nStop();const L=()=>($("#ixp").checked?P2:P1).length;if(ns>=L()-1)ns=-1;$("#ngo").textContent="Pause";ns++;drawNet();
+ nt=setInterval(()=>{if(ns<L()-1){ns++;nsel=($("#ixp").checked?P2:P1)[ns];drawNet()}else nStop()},1600)};
+$("#nrs").onclick=()=>{nStop();ns=-1;drawNet()};$("#ixp").onchange=()=>{nStop();ns=-1;drawNet()};drawNet();
+
+/* ---------- Packet switching lab ---------- */
+let lab={q:[],t:0,del:0,drop:0,sent:0,dsum:0,cr:0},labT=null;
+function labDraw(){
+ const l=+$("#lam").value,m=+$("#mu").value,B=+$("#buf").value;
+ $("#lamv").textContent=l;$("#muv").textContent=m;$("#bufv").textContent=B;
+ $("#qv").innerHTML=Array.from({length:B},(_,i)=>`<div class="qs ${i<lab.q.length?"f":""}"></div>`).join("");
+ const loss=lab.sent?lab.drop/lab.sent*100:0,dl=lab.del?lab.dsum/lab.del*1000:0,th=lab.t?lab.del/lab.t:0;
+ $("#lst").innerHTML="<tr><th>Sent</th><th>Delivered</th><th>Dropped</th><th>Loss</th><th>Average delay</th><th>Throughput</th></tr><tr>"+
+  [lab.sent,lab.del,lab.drop,loss.toFixed(1)+"%",dl.toFixed(0)+" ms",th.toFixed(1)+" pkt/s"].map(x=>`<td>${x}</td>`).join("")+"</tr>";
+ $("#lmsg").textContent=l<m*0.8?"The link keeps up, so packets rarely wait.":l<=m*1.05?"Arrivals match the link speed: queues build up and delay rises.":"Packets arrive faster than the link can send: the buffer fills and packets are dropped. Throughput can never exceed the link speed."}
+function labTick(){
+ const dt=.1,l=+$("#lam").value,m=+$("#mu").value,B=+$("#buf").value;lab.t+=dt;
+ let x=l*dt;while(x>0){if(Math.random()<Math.min(1,x)){lab.sent++;lab.q.length<B?lab.q.push(lab.t):lab.drop++}x--}
+ lab.cr+=m*dt;
+ while(lab.cr>=1&&lab.q.length){lab.cr--;lab.del++;lab.dsum+=lab.t-lab.q.shift()+1/m}
+ if(!lab.q.length)lab.cr=Math.min(lab.cr,.99);
+ labDraw()}
+function labStop(){clearInterval(labT);labT=null;$("#lgo").textContent="Start"}
+$("#lgo").onclick=()=>{if(labT)return labStop();$("#lgo").textContent="Pause";labT=setInterval(labTick,100)};
+$("#lrs").onclick=()=>{lab={q:[],t:0,del:0,drop:0,sent:0,dsum:0,cr:0};labDraw()};
+["lam","mu","buf"].forEach(i=>$("#"+i).oninput=labDraw);labDraw();
+
+/* ---------- Topology ---------- */
+let T="star",fail=new Set();
+const INFO={star:"Star: hosts connect to a central switch. If the switch fails, every host is isolated. One host failing affects only that host.",
+bus:"Bus: hosts share one backbone cable. A break/failure of the backbone splits or stops the network; hosts share bandwidth.",
+ring:"Ring: devices form a closed loop. One failure leaves a path the other way round in this model; two failures can split the ring.",
+mesh:"Mesh: many interconnections give alternate paths, but the number of links grows quickly (n(n−1)/2 for full mesh)."};
+$("#tbtns").innerHTML=Object.keys(INFO).map(k=>`<button class="btn" data-t="${k}">${k[0].toUpperCase()+k.slice(1)}</button>`).join(" ");
+document.querySelectorAll("[data-t]").forEach(b=>b.onclick=()=>{T=b.dataset.t;fail.clear();drawT()});
+$("#cnt").oninput=()=>{fail.clear();drawT()};
+function drawT(){
+ const n=+$("#cnt").value;$("#cntv").textContent=n;
+ document.querySelectorAll("[data-t]").forEach(b=>b.classList.toggle("pri",b.dataset.t==T));
+ const cx=280,cy=170,R=125,nodes=[],edges=[];
+ const ring=i=>[cx+R*Math.cos(2*Math.PI*i/n-Math.PI/2),cy+R*Math.sin(2*Math.PI*i/n-Math.PI/2)];
+ for(let i=0;i<n;i++){const [x,y]=ring(i);nodes.push({id:i,x,y,ic:i==n-1&&T!="star"&&T!="bus"?"SRV":"PC",lb:i==n-1&&T!="star"&&T!="bus"?"Server":"H"+(i+1)})}
+ if(T=="star"){nodes.push({id:n,x:cx,y:cy,ic:"SW",lb:"Switch",core:1});for(let i=0;i<n;i++)edges.push([i,n])}
+ if(T=="bus"){nodes.forEach((p,i)=>{p.x=60+i*(440/(n-1||1));p.y=i%2?250:90});nodes.push({id:n,x:280,y:170,ic:"",lb:"Backbone cable",core:1});for(let i=0;i<n;i++)edges.push([i,n])}
+ if(T=="ring"){for(let i=0;i<n;i++)edges.push([i,(i+1)%n])}
+ if(T=="mesh"){for(let i=0;i<n;i++)for(let j=i+1;j<n;j++)edges.push([i,j])}
+ if(T=="star"||T=="bus"){nodes[n-1].ic="SRV";nodes[n-1].lb="Server"}
+ /* reachability from first working host */
+ const adj={};nodes.forEach(p=>adj[p.id]=[]);edges.forEach(([a,b])=>{if(!fail.has(a)&&!fail.has(b)){adj[a].push(b);adj[b].push(a)}});
+ const seen=new Set(),src=fail.has(0)?null:0;if(src!==null){const q=[0];seen.add(0);while(q.length){const u=q.pop();adj[u].forEach(v=>{if(!seen.has(v)){seen.add(v);q.push(v)}})}}
+ const P=id=>nodes[id];let s="";
+ if(T=="bus")s+=`<line x1="40" y1="170" x2="520" y2="170" stroke="${fail.has(n)?"#c92a2a":"#888"}" stroke-width="6"/>`;
+ edges.forEach(([a,b])=>{const A=P(a),B=P(b),dead=fail.has(a)||fail.has(b);
+  const bs=T=="bus";s+=`<line x1="${A.x}" y1="${A.y}" x2="${bs?A.x:B.x}" y2="${bs?170:B.y}" stroke="${dead?"#c92a2a":"#7a85a8"}" stroke-width="2" ${dead?'stroke-dasharray="5"':""}/>`;});
+ nodes.forEach(p=>{const bad=fail.has(p.id),un=!bad&&!seen.has(p.id);
+  const bx=T=="bus"&&p.core?-999:p.x;
+  s+=`<g style="cursor:pointer" onclick="tog(${p.id})"><circle cx="${bx}" cy="${p.y}" r="22" fill="${bad?"#c92a2a":un?"#f08c0040":"#2b8a3e30"}" stroke="${bad?"#c92a2a":un?"#f08c00":"#2b8a3e"}" stroke-width="2"/><text x="${bx}" y="${p.y+6}" text-anchor="middle" style="font-size:11px;font-weight:700">${p.ic}</text><text x="${bx}" y="${p.y+38}" text-anchor="middle">${p.lb}${bad?" (failed)":un?" (cut off)":""}</text></g>`});
+ if(T=="bus")s+=`<g style="cursor:pointer" onclick="tog(${n})"><rect x="215" y="150" width="130" height="18" rx="9" fill="${fail.has(n)?"#c92a2a":"#7a85a8"}"/><text x="280" y="164" text-anchor="middle" style="fill:#fff">Backbone ${fail.has(n)?"(failed)":""}</text></g>`;
+ $("#svg").innerHTML=s;
+ const cut=nodes.filter(p=>!p.core&&!seen.has(p.id)&&!fail.has(p.id)).length;
+ $("#tinfo").innerHTML=INFO[T]+`<br><b>Now:</b> ${fail.size?`${fail.size} failed, ${src===null?"H1 itself is down":cut+" device(s) cut off from H1"}.`:"all devices connected."} <button class="btn" onclick="fail.clear();drawT()">Repair all</button>`}
+function tog(id){fail.has(id)?fail.delete(id):fail.add(id);drawT()}
+drawT();
+
+/* ---------- Quiz ---------- */
+const Q=[
+["Layers","Which layer uses port numbers to deliver data to the right application?",["Network","Transport","Data Link","Physical"],1,"The Transport layer (TCP/UDP) uses ports for process-to-process delivery."],
+["Layers","Your video call prefers speed over perfect reliability. Which protocol fits best?",["TCP","UDP","ARP","FTP"],1,"UDP has no retransmission delay, so it suits real-time media."],
+["Layers","What is the data unit at the Data Link layer?",["Packet","Segment","Frame","Bit"],2,"Link-layer units are frames."],
+["Layers","Which OSI layers does the Internet stack's Application layer roughly cover?",["1–2","3–4","5–7","Only 7"],2,"Session, Presentation and Application are merged."],
+["Encapsulation","During a transfer through a router, what is replaced for each link?",["IP addresses","TCP ports","The link-layer frame","The message"],2,"Routers forward the IP packet; the frame (MAC addresses) is rebuilt per link."],
+["Encapsulation","Which piece of information is added at the Network layer?",["MAC addresses","IP addresses","Port numbers","Bits"],1,"IP adds source/destination IP addresses."],
+["Fundamentals","Which delay depends on packet length L and link rate R?",["Propagation","Queuing","Transmission (L/R)","Processing"],2,"Transmission delay = L/R."],
+["Fundamentals","End-to-end throughput is mainly limited by…",["The fastest link","The bottleneck link","Average link","The first link only"],1,"The slowest link on the path is the bottleneck."],
+["Fundamentals","Which organisation publishes Internet protocol RFCs?",["IEEE","IETF","ISO only","ICANN"],1,"IETF develops RFCs; IEEE does Ethernet/Wi‑Fi standards."],
+["Topology","In a star topology, what happens if the central switch fails?",["Nothing","All hosts lose connectivity","Only one host is affected","Traffic reroutes"],1,"The switch is a single point of failure."],
+["Topology","Which topology gives alternate paths but needs the most links?",["Star","Bus","Ring","Mesh"],3,"Full mesh has n(n−1)/2 links."],
+["Devices","Which device forwards packets between different IP networks?",["Switch","Router","Host","Cable"],1,"Routers connect networks using IP addresses."],
+["Scenario","A page loads slowly because many packets wait in a router buffer. Which delay is growing?",["Propagation","Queuing","Transmission","None"],1,"Waiting in buffers is queuing delay."],
+["Standards","Which organisation defines Ethernet (802.3) and Wi-Fi (802.11)?",["IETF","IEEE","W3C","ICANN"],1,"The IEEE 802 committees define these link and physical standards."],
+["Fundamentals","Which part of the Internet lets ISPs connect directly to shorten paths?",["Switch","IXP","Hub","Access point"],1,"An Internet Exchange Point lets networks peer directly, reducing hops and delay."]];
+const ORD=["Application data","Segment (TCP header added)","Packet (IP header added)","Frame (link header/trailer)","Bits on the wire"];
+let qi=0,score={},ans=0,order=[],qs=[...Q,"ORD"];
+function drawQ(){
+ const box=$("#q");
+ if(qi>=qs.length){const topics=Object.entries(score);
+  box.innerHTML=`<h3>Done! Score: ${ans}/${Q.length}</h3>`+topics.map(([t,v])=>`<p>${t}: ${v[0]}/${v[1]} ${v[0]<v[1]?"<span class='tag'>revise</span>":"✔"}</p>`).join("")+`<button class="btn pri" onclick="qi=0;score={};ans=0;drawQ()">Retry</button>`;return}
+ const q=qs[qi],head=`<div class="bar"><i style="width:${qi/qs.length*100}%"></i></div>`;
+ if(q=="ORD"){order=[];const sh=[...ORD.keys()].sort((a,b)=>(a*7%5)-(b*7%5));
+  box.innerHTML=head+`<p class="mu">Encapsulation</p><h3>Tap the steps in the order data is encapsulated (sender side).</h3><div id="ob">${sh.map(i=>`<button class="btn opt" data-i="${i}">${ORD[i]}</button>`).join("")}</div><div id="ex"></div>`;
+  box.querySelectorAll(".opt").forEach(b=>b.onclick=()=>{const i=+b.dataset.i;if(i!=order.length){b.classList.add("bad");setTimeout(()=>b.classList.remove("bad"),500);return}
+   order.push(i);b.classList.add("ok");b.disabled=true;
+   if(order.length==ORD.length){const s=score["Encapsulation"]||[0,0];s[0]++;s[1]++;score["Encapsulation"]=s;ans++;$("#ex").innerHTML=`<p>✔ Correct. <button class="btn pri" onclick="qi++;drawQ()">Finish</button></p>`}});return}
+ box.innerHTML=head+`<p class="mu">${q[0]} · Question ${qi+1}/${Q.length}</p><h3>${q[1]}</h3>`+q[2].map((o,i)=>`<button class="btn opt" data-i="${i}">${o}</button>`).join("")+`<div id="ex"></div>`;
+ box.querySelectorAll(".opt").forEach(b=>b.onclick=()=>{const i=+b.dataset.i,ok=i==q[3];
+  box.querySelectorAll(".opt").forEach((x,j)=>{x.disabled=true;if(j==q[3])x.classList.add("ok")});if(!ok)b.classList.add("bad");
+  const s=score[q[0]]||[0,0];s[1]++;if(ok){s[0]++;ans++}score[q[0]]=s;
+  $("#ex").innerHTML=`<div class="note">${ok?"✔ Correct. ":"✘ Not quite. "}${q[4]}</div><button class="btn pri" onclick="qi++;drawQ()">Next</button>`})}
+drawQ();
+show(tabs.some(t=>"#"+t[0]==location.hash)?location.hash.slice(1):"about");
+</script></body></html>
